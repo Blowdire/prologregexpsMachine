@@ -1,0 +1,177 @@
+is_regexp(RE) :- RE =.. [seq| R1], regexp(R1).
+regexp(R1) :- is_regexp(R1).
+regexp([R1| R2]) :- is_regexp(R1), regexp(R2).
+
+
+is_regexp(X) :- atomic(X).
+
+%is_regexp(R1) :- compound(R1).
+
+is_regexp(epsilon).
+
+is_regexp(or(R1, R2)) :- is_regexp(R1), is_regexp(R2).
+
+is_regexp(star(R1)) :- is_regexp(R1).
+
+is_regexp(plus(R1)) :- is_regexp(R1).
+
+nfa_regex_comp(Id, RE) :- 
+    gensym(q, Initial),
+    gensym(f, Final),
+    assert(initial(Id, Initial)),
+    assert(final(Id, Final)),
+    nfa_regex_comp(Id, Initial, RE, Final).
+
+%base una carattere
+
+nfa_regex_comp(Id, Initial, RE, Final) :-
+    atomic(Id),
+    atomic(RE),
+    assert(delta(Id, Initial, RE, Final)).
+
+%or a più argomenti
+
+%caso in cui ci sono 2 argomenti
+nfa_regex_comp(Id, Initial, or(RE1,RE2), Final) :-
+    gensym(q, Init1),
+    gensym(q, Init2),
+    assert(delta(Id, Initial, epsilon, Init1)),
+    assert(delta(Id, Initial, epsilon, Init2)),
+    gensym(q, Final1),
+    gensym(q, Final2),
+    assert(delta(Id, Final1, epsilon, Final)),
+    assert(delta(Id, Final2, epsilon, Final)),
+    nfa_regex_comp(Id, Init1, RE1, Final1),
+    nfa_regex_comp(Id, Init2, RE2, Final2).
+
+%caso con un argomento
+nfa_regex_comp(Id, Initial, or([RE]), Final):-
+    gensym(q, Initial1),
+    gensym(q, Final1),
+    assert(delta(Id, Initial, epsilon, Initial1)),
+    assert(delta(Id, Final1, epsilon, Final)),
+    nfa_regex_comp(Id, Initial1, RE, Final1).
+
+%caso con una lista di argomenti
+nfa_regex_comp(Id, Initial, or([X| Xs]), Final):-
+    
+    nfa_regex_comp(Id, Initial, or([X]), Final),
+    nfa_regex_comp(Id, Initial, or(Xs), Final).
+
+nfa_regex_comp(Id, Initial, or(RE), Final):-
+    gensym(q, Initial1),
+    gensym(q, Final1),
+    assert(delta(Id, Initial, epsilon, Initial1)),
+    assert(delta(Id, Final1, epsilon, Final)),
+    nfa_regex_comp(Id, Initial1, RE, Final1).
+
+
+%caso con più argomenti, processa i primi due e processa ricorsivamente il resto
+nfa_regex_comp(Id, Initial, RE, Final) :-
+    RE =.. [or,R1,R2|R3],
+    gensym(q, Init1),
+    gensym(q, Init2),
+    assert(delta(Id, Initial, epsilon, Init1)),
+    assert(delta(Id, Initial, epsilon, Init2)),
+    gensym(q, Final1),
+    gensym(q, Final2),
+    assert(delta(Id, Final1, epsilon, Final)),
+    assert(delta(Id, Final2, epsilon, Final)),
+    nfa_regex_comp(Id, Init1, R1, Final1),
+    nfa_regex_comp(Id, Init2, R2, Final2),
+
+    X =.. [or,R3],
+    nfa_regex_comp(Id, Initial, X, Final).
+    
+
+
+%seq
+%seq con 2 parametri
+nfa_regex_comp(Id, Initial, RE, Final) :-
+    RE =.. [seq, R1, R2],
+
+    gensym(q, Final1),
+    gensym(q, Initial2),
+    nfa_regex_comp(Id, Initial, R1, Final1),
+    assert(delta(Id, Final1, epsilon, Initial2)),
+    nfa_regex_comp(Id, Initial2, R2, Final).
+
+nfa_regex_comp(Id, Initial, RE, Final) :-
+    RE =.. [seq, R1, R2| R3],
+    gensym(q,Final1),
+    gensym(q,Initial2),
+    gensym(q,Final2),
+    gensym(q, Initial3),
+    nfa_regex_comp(Id, Initial, R1, Final1 ),
+    assert(delta(Id, Final1, epsilon, Initial2)),
+    nfa_regex_comp(Id, Initial2, R2, Final2),
+    assert(delta(Id, Final2, epsilon, Initial3)),
+    nfa_regex_comp(Id, Initial3, R3, Final).
+
+nfa_regex_comp(Id, Initial, RE, Final) :-
+    RE =.. [seq, RE1],
+    nfa_regex_comp(Id, Initial,RE1, Final ).
+
+nfa_regex_comp(Id, Initial, [RE], Final) :-
+    nfa_regex_comp(Id, Initial, RE, Final).
+
+nfa_regex_comp(Id, Initial, [RE1| RE2], Final) :-
+    gensym(q, Final1),
+    gensym(q, Initial2),
+    nfa_regex_comp(Id, Initial, RE1, Final1),
+    assert(delta(Id, Final1, epsilon, Initial2)),
+    nfa_regex_comp(Id, Initial2, RE2, Final).
+
+%star
+nfa_regex_comp(Id, Initial, star(RE), Final):-
+    gensym(q, Initial1),
+    gensym(q, Final1),
+    assert(delta(Id, Initial, epsilon, Initial1)),
+    assert(delta(Id, Final1, epsilon, Final)),
+    assert(delta(Id, Final1, epsilon, Initial1)),
+    assert(delta(Id, Initial, epsilon, Final)),
+    nfa_regex_comp(Id, Initial1,RE, Final1).
+
+%plus
+nfa_regex_comp(Id, Initial, plus(RE), Final) :-
+    nfa_regex_comp(id, Initial, seq(RE, star(RE)),Final).
+
+%prova dell'automa
+nfa_test(Id, []):-
+    atomic(Id),
+    initial(Id, Q),
+    nfa_test(Id, [], Q).
+
+nfa_test(Id, []) :-
+    atomic(Id),
+    initial(Id, Q),
+    delta(Id, Q, X, Qnext),
+    X=epsilon,
+    nfa_test(Id, [], Qnext).
+
+nfa_test(Id, RE):-
+    atomic(Id),
+    initial(Id, Q),
+    nfa_test(Id, RE, Q).
+
+nfa_test(Id, [X| Xs]) :-
+    atomic(Id),
+    initial(Id, Q),
+    nfa_test(Id, [X| Xs], Q).
+    
+nfa_test(Id, [X| Xs], Q) :-
+    delta(Id, Q, X, Qnext),
+    nfa_test(Id, Xs, Qnext).
+
+nfa_test(Id, [X| Xs], Q) :-
+    delta(Id, Q, T, Qnext),
+    T=epsilon,
+    nfa_test(Id, [X| Xs], Qnext).
+
+nfa_test(Id, [], Q) :-
+    final(Id, Q).
+
+nfa_test(Id, [], Q) :-
+    delta(Id, Q, epsilon, Qnext),
+    nfa_test(Id, [], Qnext).
+   
