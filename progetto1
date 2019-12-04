@@ -175,3 +175,28 @@ nfa_test(Id, [], Q) :-
     delta(Id, Q, epsilon, Qnext),
     nfa_test(Id, [], Qnext).
    
+%nfa list
+nfa_list(Id) :-
+    atomic(Id),
+    listing(initial(Id,_)),
+    listing(delta(Id, _, _, _)),
+    listing(final(Id, _)).
+
+nfa_list() :-
+    listing(initial(_,_)),
+    listing(delta(_, _, _, _)),
+    listing(final(_, _)).
+
+%clear
+
+nfa_clear(Id) :-
+    retractall(delta(Id, _, _, _)),
+    retractall(initial(Id, _)),
+    retractall(final(Id, _)).
+
+nfa_clear():-
+    nfa_clear(_).
+    
+
+
+    
