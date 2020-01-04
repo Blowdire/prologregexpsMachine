@@ -172,7 +172,11 @@
 		      initialseq3
 		      (nthcdr 3 re)
 		      final)))))
-	   (gensym "q") (gensym "q") (gensym "q") (gensym "q") (gensym "q"))))))
+	   (gensym "q")
+	   (gensym "q")
+	   (gensym "q")
+	   (gensym "q")
+	   (gensym "q"))))))
 
 (defun nfa-regexp-comp-tot (initial re final)
   (cond 
@@ -213,9 +217,9 @@
 		     (atom (third re)))
 		(list 
 		 (list (list initial 'epsilon initialOr1)
-		       (list initial 'epsilon initialOr2) 
-		       (list finalOr1 'epsilon final) 
-		       (list finalOr2 'epsilon final) 
+		       (list initial 'epsilon initialOr2)
+		       (list finalOr1 'epsilon final)
+		       (list finalOr2 'epsilon final)
 		       (nfa-regexp-comp-tot
 			initialOr1
 			(list (second re))
@@ -226,8 +230,8 @@
 			finalOr2))))
                ((and (atom (second re))
 		     (consp (third re)))
-		(list (list initial 'epsilon initialOr1) 
-		      (list initial 'epsilon initialOr2) 
+		(list (list initial 'epsilon initialOr1)
+		      (list initial 'epsilon initialOr2)
 		      (list finalOr1 'epsilon final) 
 		      (list finalOr2 'epsilon final) 
 		      (nfa-regexp-comp-tot
@@ -240,8 +244,8 @@
 		       finalOr2)))
                ((and (consp (second re))
 		     (atom (third re)))
-		(list (list initial 'epsilon initialOr1) 
-		      (list initial 'epsilon initialOr2) 
+		(list (list initial 'epsilon initialOr1)
+		      (list initial 'epsilon initialOr2)
 		      (list finalOr1 'epsilon final) 
 		      (list finalOr2 'epsilon final) 
 		      (nfa-regexp-comp-tot
@@ -414,7 +418,7 @@
         (if (eq (second (car state)) 'epsilon) 
             (if (nfa-test-helper nfa re (third (car state))) t
               (nfa-test-helper nfa re (cdr state)))
-				    
+	  
           (if (null re) nil 
             (if (consp re)
                 (if (eq (car re) (second (car state)))
@@ -448,8 +452,8 @@
 	(if (eq (car re) 'or) (is-regexp (cdr re))
 	  (if (eq (car re) 'star)
 	      (if (= (lunghezza re) 2) (is-regexp (cdr re))
-				    (error "regexp non valida"))
+		(error "regexp non valida"))
 	    (if (eq (car re) 'plus)
 		(if (= (lunghezza re) 2) (is-regexp (cdr re))
-				      (error "regexp non valida"))
+		  (error "regexp non valida"))
 	      (is-regexp (cdr re)))))))))
