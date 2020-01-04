@@ -193,7 +193,6 @@
            (ricorsiva-star re initial final))
           ((> (lunghezza re) 2)
            (error "Regexp non valida"))))
-					; caso seq
    ((eq (car re) 'seq) 
     (cond ((= (lunghezza re) 2)
            (ricorsiva-seq re initial final 2))
