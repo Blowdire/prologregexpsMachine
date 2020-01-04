@@ -374,7 +374,6 @@
               (append (list 'or) (nthcdr 3 re))))))))
    
    (t (progn
-        (print (first re))
         ((lambda (final1)
            (if (consp (first re)) 
                (list
